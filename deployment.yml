@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distributed-job-processor
+  labels:
+    app: distributed-job-processor
+spec:
+  replicas: 3  # Set the number of replicas here
+  selector:
+    matchLabels:
+      app: distributed-job-processor
+  template:
+    metadata:
+      labels:
+        app: distributed-job-processor
+    spec:
+      containers:
+        - name: distributed-job-processor
+          image: distributed-job-processor:0.0.1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://host.docker.internal:5432/paymentsdb"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "puser"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "ppass"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: distributed-job-processor-service
+spec:
+  selector:
+    app: distributed-job-processor
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: NodePort  # Expose on a specific port for testing

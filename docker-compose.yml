@@ -1,0 +1,132 @@
+version: "3.8"
+
+services:
+  # 1. POSTGRES DB
+  db:
+    image: postgres:15-alpine
+    container_name: distributed-job-processor-postgres
+    environment:
+      POSTGRES_DB: paymentsdb
+      POSTGRES_USER: puser
+      POSTGRES_PASSWORD: ppass
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./init-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init-db/init-payment-intents.sql:/docker-entrypoint-initdb.d/init-payment-intents.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U puser -d paymentsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. DISTRIBUTED-JOB-PROCESSOR Spring Boot App
+  distributed-job-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: com.overpathz/distributed-job-processor:0.0.1
+    container_name: distributed-job-processor-app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://db:5432/paymentsdb"
+      SPRING_DATASOURCE_USERNAME: "puser"
+      SPRING_DATASOURCE_PASSWORD: "ppass"
+      # ? Optional stuff. Expose Prometheus endpoint on /actuator/prometheus
+      # (Actuator + Micrometer dependencies required)
+
+  # 3. ELASTICSEARCH (logs from filebeat)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false             # disable security for local development
+      - xpack.security.transport.ssl.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m           # configurable :)
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 4. KIBANA (logs from elasticsearch)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.9.2
+    container_name: kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - SERVER_NAME=kibana
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_SECURITY_ENABLED=false
+    ports:
+      - "5601:5601"
+
+  # 5. FILEBEAT (collects container logs and sends to Elasticsearch)
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.9.2
+    container_name: filebeat
+    user: root
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./filebeat/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+    # If you enable ES security, specify credentials or tokens
+
+  # 6. PROMETHEUS. Scrapes metrics from our docker container
+  prometheus:
+    image: prom/prometheus:v2.47.1
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:9090/-/healthy || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 7. GRAFANA. Dashboard for metrics from Prometheus
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_SERVER_DOMAIN: "localhost"
+      GF_SERVER_ROOT_URL: "http://localhost:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  db-data:
+    name: db-data
+  es-data:
+  grafana-data:

@@ -34,14 +34,4 @@ public class BatchUpdater {
             paymentIntentRepository.updateStatusForIds("FAILED", failedIds);
         }
     }
-
-    @Transactional
-    public void updateBatchStatus(List<Long> processedIds, List<Long> failedIds) {
-        if (!processedIds.isEmpty()) {
-            paymentIntentRepository.updateStatusForIds("PROCESSED", processedIds);
-        }
-        if (!failedIds.isEmpty()) {
-            paymentIntentRepository.updateStatusForIds("FAILED", failedIds);
-        }
-    }
 }

@@ -10,10 +10,10 @@ You have to create k8s cluster
 
 ### Application itself
 1) `git clone https://github.com/overpathz/distributed-job-processor.git`
-2) <b>Intermediate step.</b> Your local Docker daemon and the Docker daemon inside Minikube are separate. By default, images built on your local machine are not available inside Minikube’s environment. <br/>
+2) Run other services (postgres + observability stack): `docker-compose up -d`
+3) <b>Intermediate step.</b> Your local Docker daemon and the Docker daemon inside Minikube are separate. By default, images built on your local machine are not available inside Minikube’s environment. <br/>
 So, execute this command in your project root: `eval $(minikube -p minikube docker-env)`
-3) Build app image: `docker build -t distributed-job-processor:0.0.1 .`
-4) Run all other services (postgres + observability stack): `docker-compose up -d`
+4) Build app image: `docker build -t distributed-job-processor:0.0.1 .`
 5) Deploy the application to Kubernetes: `kubectl apply -f deployment.yml` 
 
 ### List of commands you may need

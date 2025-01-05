@@ -1,5 +1,17 @@
 # Scalable distributed job processor service
 
+## Description
+This service is a Spring Boot application built to handle high volumes of payment transactions. It’s designed to scale effortlessly within a Kubernetes cluster, allowing multiple nodes to process payment intents in parallel without stepping on each other’s toes. It uses PostgreSQL with FOR UPDATE SKIP LOCKED to safely fetch and lock batches of payment intents for processing. This approach ensures smooth operation and avoids conflicts when multiple nodes are working simultaneously. The app also uses Spring’s scheduling to process transactions in regular batches, making it fast and reliable for large-scale payment workflows. Monitoring can be set up with Prometheus to keep an eye on performance and system health.
+
+## Features
+
+- Batch Processing: Efficiently processes payment intents in configurable batch sizes.
+- Concurrency Control: Ensures no duplicate processing using row-level locking with FOR UPDATE SKIP LOCKED.
+- Scalability: Easily scales horizontally with multiple Kubernetes replicas.
+- Resilience: Handles node crashes gracefully with retry mechanisms and timeout handling.
+- Monitoring: Integrated Prometheus metrics for real-time monitoring and alerting.
+- Dockerized: Containerized application for easy deployment and management.
+
 ## How to run
 
 ### Prerequisites

@@ -51,25 +51,6 @@ public class PaymentIntentService {
     }
 
     /**
-     * 2) Process each row outside of transaction & update status in separate transaction.
-     */
-//    public void processBatch(List<PaymentIntent> batch) {
-//        log.info("Starting batch processing. New image");
-//        long startTime = System.currentTimeMillis();
-//        // Call external service outside the transaction
-//        // Call external service outside the transaction
-//        for (PaymentIntent intent : batch) {
-//            boolean success = externalPaymentClient.sendPayment(intent);
-//            intent.setStatus(success ? "PROCESSED" : "FAILED");
-//        }
-//        // Update statuses in a new short transaction
-//        long startUpdateBatchStatus = System.currentTimeMillis();
-//        batchUpdater.updateBatchStatus(batch); // not good, but leave for demo
-//        log.info("Update batch status in={} ms", System.currentTimeMillis() - startUpdateBatchStatus);
-//        log.info("Finishing batch processing. Took {} ms", System.currentTimeMillis() - startTime);
-//    }
-
-    /**
      * Processes each PaymentIntent in parallel using the ExecutorService.
      */
     public void processBatch(List<PaymentIntent> batch) {

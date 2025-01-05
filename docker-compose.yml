@@ -21,24 +21,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # 2. DISTRIBUTED-JOB-PROCESSOR Spring Boot App
-  distributed-job-processor:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: com.overpathz/distributed-job-processor:0.0.1
-    container_name: distributed-job-processor-app
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: "jdbc:postgresql://db:5432/paymentsdb"
-      SPRING_DATASOURCE_USERNAME: "puser"
-      SPRING_DATASOURCE_PASSWORD: "ppass"
-      # ? Optional stuff. Expose Prometheus endpoint on /actuator/prometheus
-      # (Actuator + Micrometer dependencies required)
+#  # 2. DISTRIBUTED-JOB-PROCESSOR Spring Boot App
+#  distributed-job-processor:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    image: com.overpathz/distributed-job-processor:0.0.1
+#    container_name: distributed-job-processor-app
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      SPRING_DATASOURCE_URL: "jdbc:postgresql://db:5432/paymentsdb"
+#      SPRING_DATASOURCE_USERNAME: "puser"
+#      SPRING_DATASOURCE_PASSWORD: "ppass"
+#      # ? Optional stuff. Expose Prometheus endpoint on /actuator/prometheus
+#      # (Actuator + Micrometer dependencies required)
 
   # 3. ELASTICSEARCH (logs from filebeat)
   elasticsearch:
